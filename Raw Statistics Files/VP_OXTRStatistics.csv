@@ -1,0 +1,86 @@
+[Statistics]
+,Count,Unit,Area (integration),Unit,Brightness (integration),Position correction value (X),Position correction value (Y)
+Average,2171,pcs,4090,µm2,253040,0,0
+Total,173691,pcs,327207,µm2,20243226,0,0
+[Main]
+Name,Count,Unit,Area (integration),Unit,Brightness (integration),Position correction value (X),Position correction value (Y),Conditions file
+1284 VP1_Overlay.jpg,1471,pcs,1147,µm2,60275,0,0,Clean_OXTR.mcd
+1284 VP2_Overlay.jpg,1162,pcs,900,µm2,47057,0,0,Clean_OXTR.mcd
+1284 VP3_Overlay.jpg,958,pcs,790,µm2,39322,0,0,Clean_OXTR.mcd
+1284 VP4_Overlay.jpg,1302,pcs,1087,µm2,57532,0,0,Clean_OXTR.mcd
+1674 VP1_Overlay.jpg,3519,pcs,5618,µm2,471996,0,0,Clean_OXTR.mcd
+1674 VP2_Overlay.jpg,3869,pcs,6121,µm2,471507,0,0,Clean_OXTR.mcd
+1674 VP3_Overlay.jpg,4334,pcs,6936,µm2,486929,0,0,Clean_OXTR.mcd
+1674 VP4_Overlay.jpg,3561,pcs,5775,µm2,387780,0,0,Clean_OXTR.mcd
+1708 VP1_Overlay.jpg,1279,pcs,1760,µm2,87212,0,0,Clean_OXTR.mcd
+1708 VP2_Overlay.jpg,1361,pcs,1740,µm2,82837,0,0,Clean_OXTR.mcd
+1708 VP3_Overlay.jpg,1228,pcs,1688,µm2,80940,0,0,Clean_OXTR.mcd
+1708 VP4_Overlay.jpg,1240,pcs,1591,µm2,79663,0,0,Clean_OXTR.mcd
+4337 VP1_Overlay.jpg,37,pcs,21,µm2,2821,0,0,Clean_OXTR.mcd
+4337 VP2_Overlay.jpg,34,pcs,19,µm2,2627,0,0,Clean_OXTR.mcd
+4337 VP3_Overlay.jpg,47,pcs,27,µm2,3223,0,0,Clean_OXTR.mcd
+4337 VP4_Overlay.jpg,57,pcs,33,µm2,3493,0,0,Clean_OXTR.mcd
+4607 G6 VP1_Overlay.jpg,675,pcs,790,µm2,69555,0,0,Clean_OXTR.mcd
+4607 G6 VP2_Overlay.jpg,1043,pcs,1559,µm2,135335,0,0,Clean_OXTR.mcd
+4607 G6 VP3_Overlay.jpg,974,pcs,1307,µm2,116838,0,0,Clean_OXTR.mcd
+4671 VP1_Overlay.jpg,1426,pcs,1773,µm2,147111,0,0,Clean_OXTR.mcd
+4671 VP2_Overlay.jpg,1474,pcs,1657,µm2,127946,0,0,Clean_OXTR.mcd
+4999 VP1_Overlay.jpg,2950,pcs,5422,µm2,333222,0,0,Clean_OXTR.mcd
+4999 VP2_Overlay.jpg,1957,pcs,3188,µm2,184324,0,0,Clean_OXTR.mcd
+4999 VP3_Overlay.jpg,1414,pcs,2234,µm2,127796,0,0,Clean_OXTR.mcd
+5027 VP1_Overlay.jpg,4270,pcs,9832,µm2,641772,0,0,Clean_OXTR.mcd
+5027 VP2_Overlay.jpg,4109,pcs,9391,µm2,564924,0,0,Clean_OXTR.mcd
+5027 VP3_Overlay.jpg,4330,pcs,8761,µm2,539150,0,0,Clean_OXTR.mcd
+5077 VP1_Overlay.jpg,3307,pcs,5511,µm2,386824,0,0,Clean_OXTR.mcd
+5077 VP2_Overlay.jpg,3133,pcs,4864,µm2,342741,0,0,Clean_OXTR.mcd
+5077 VP3_Overlay.jpg,3391,pcs,5495,µm2,406323,0,0,Clean_OXTR.mcd
+5278 VP1_Overlay.jpg,3781,pcs,7486,µm2,458171,0,0,Clean_OXTR.mcd
+5278 VP2_Overlay.jpg,3452,pcs,6787,µm2,414687,0,0,Clean_OXTR.mcd
+5278 VP3_Overlay.jpg,3279,pcs,5905,µm2,406158,0,0,Clean_OXTR.mcd
+5278 VP4_Overlay.jpg,3595,pcs,5969,µm2,404297,0,0,Clean_OXTR.mcd
+5297 VP1_Overlay.jpg,3766,pcs,6750,µm2,395717,0,0,Clean_OXTR.mcd
+5297 VP2_Overlay.jpg,4967,pcs,10619,µm2,609344,0,0,Clean_OXTR.mcd
+5297 VP3_Overlay.jpg,5271,pcs,10861,µm2,623128,0,0,Clean_OXTR.mcd
+5303 VP1_Overlay.jpg,5023,pcs,19872,µm2,1288773,0,0,Clean_OXTR.mcd
+5303 VP2_Overlay.jpg,4564,pcs,18064,µm2,1190970,0,0,Clean_OXTR.mcd
+5303 VP3_Overlay.jpg,3829,pcs,15226,µm2,977386,0,0,Clean_OXTR.mcd
+5303 VP4_Overlay.jpg,4152,pcs,15139,µm2,967947,0,0,Clean_OXTR.mcd
+5346 VP1_Overlay.jpg,2977,pcs,5691,µm2,322169,0,0,Clean_OXTR.mcd
+5346 VP2_Overlay.jpg,3584,pcs,8618,µm2,485303,0,0,Clean_OXTR.mcd
+5346 VP3_Overlay.jpg,3554,pcs,8365,µm2,460389,0,0,Clean_OXTR.mcd
+5346 VP4_Overlay.jpg,3641,pcs,7910,µm2,455988,0,0,Clean_OXTR.mcd
+5376 VP1_Overlay.jpg,3375,pcs,4576,µm2,300747,0,0,Clean_OXTR.mcd
+5376 VP2_Overlay.jpg,2465,pcs,3803,µm2,219315,0,0,Clean_OXTR.mcd
+5376 VP3_Overlay.jpg,3239,pcs,4526,µm2,287652,0,0,Clean_OXTR.mcd
+5376 VP4_Overlay.jpg,3751,pcs,5513,µm2,362692,0,0,Clean_OXTR.mcd
+5403 VP1_Overlay.jpg,3255,pcs,5258,µm2,394956,0,0,Clean_OXTR.mcd
+5403 VP2_Overlay.jpg,3391,pcs,5290,µm2,395118,0,0,Clean_OXTR.mcd
+5403 VP3_Overlay.jpg,3359,pcs,4842,µm2,303753,0,0,Clean_OXTR.mcd
+5403 VP4_Overlay.jpg,3405,pcs,5280,µm2,373266,0,0,Clean_OXTR.mcd
+5554 RR VP1_Overlay.jpg,1216,pcs,1386,µm2,57433,0,0,Clean_OXTR.mcd
+5554 RR VP2_Overlay.jpg,909,pcs,1200,µm2,51113,0,0,Clean_OXTR.mcd
+5554 RR VP3_Overlay.jpg,783,pcs,948,µm2,38647,0,0,Clean_OXTR.mcd
+5554 RR VP4_Overlay.jpg,631,pcs,750,µm2,31319,0,0,Clean_OXTR.mcd
+5559 RR VP1_Overlay.jpg,651,pcs,727,µm2,34339,0,0,Clean_OXTR.mcd
+5559 RR VP2_Overlay.jpg,828,pcs,919,µm2,41606,0,0,Clean_OXTR.mcd
+5559 RR VP3_Overlay.jpg,1116,pcs,1106,µm2,53454,0,0,Clean_OXTR.mcd
+5566 RR VP1_Overlay.jpg,1299,pcs,1483,µm2,59638,0,0,Clean_OXTR.mcd
+5566 RR VP2_Overlay.jpg,1046,pcs,1351,µm2,59023,0,0,Clean_OXTR.mcd
+5566 RR VP3_Overlay.jpg,1145,pcs,1395,µm2,57038,0,0,Clean_OXTR.mcd
+5566 RR VP4_Overlay.jpg,1227,pcs,1538,µm2,62146,0,0,Clean_OXTR.mcd
+5577 RR VP1_Overlay.jpg,625,pcs,811,µm2,36411,0,0,Clean_OXTR.mcd
+5577 RR VP2_Overlay.jpg,494,pcs,678,µm2,34112,0,0,Clean_OXTR.mcd
+5577 RR VP3_Overlay.jpg,763,pcs,890,µm2,37922,0,0,Clean_OXTR.mcd
+5577 RR VP4_Overlay.jpg,1034,pcs,1403,µm2,57537,0,0,Clean_OXTR.mcd
+5643 RR VP1_Overlay.jpg,2129,pcs,2495,µm2,99654,0,0,Clean_OXTR.mcd
+5643 RR VP2_Overlay.jpg,1337,pcs,1516,µm2,61992,0,0,Clean_OXTR.mcd
+5643 RR VP3_Overlay.jpg,809,pcs,1082,µm2,41197,0,0,Clean_OXTR.mcd
+5643 RR VP4_Overlay.jpg,1728,pcs,2138,µm2,91074,0,0,Clean_OXTR.mcd
+5813 RR VP1_Overlay.jpg,1522,pcs,3222,µm2,150783,0,0,Clean_OXTR.mcd
+5813 RR VP2_Overlay.jpg,1194,pcs,2172,µm2,102996,0,0,Clean_OXTR.mcd
+5813 RR VP3_Overlay.jpg,932,pcs,2103,µm2,94184,0,0,Clean_OXTR.mcd
+5813 RR VP4_Overlay.jpg,651,pcs,1947,µm2,90592,0,0,Clean_OXTR.mcd
+5817 RR VP1_Overlay.jpg,1048,pcs,1226,µm2,56261,0,0,Clean_OXTR.mcd
+5817 RR VP2_Overlay.jpg,992,pcs,1152,µm2,54631,0,0,Clean_OXTR.mcd
+5817 RR VP3_Overlay.jpg,1154,pcs,1279,µm2,59013,0,0,Clean_OXTR.mcd
+5817 RR VP4_Overlay.jpg,841,pcs,903,µm2,42110,0,0,Clean_OXTR.mcd
