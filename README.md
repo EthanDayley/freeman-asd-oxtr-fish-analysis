@@ -7,7 +7,13 @@ This repository contains data and code from a study of the neurogenetics of auti
 This directory contains the statistics files output by the BZ-X800 analyzer software without additional processing.
 
 ## Data Preprocessing
-This directory contains programs to preprocess the data.
+This directory contains Python programs to preprocess the data.
 
 ## Preprocessed Statistics Files
 This directory contains statistics files that have been through preprocessing.
+
+## Analysis Code
+This directory contains R scripts for analyzing the data.
+
+## Analysis Output
+This directory contains the output of the R scripts from Analysis Code.
