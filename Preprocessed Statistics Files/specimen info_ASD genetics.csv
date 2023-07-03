@@ -1,0 +1,43 @@
+Subject Number,Disorder,Sex,Race,Age_yrs,oxtr_density_in_vp,oxtr_density_in_nbm
+5843,Control,Male,African American,0.27,,525.0766667
+5817,Control,Male,Caucasian,0.58,3463.976667,667.62
+5813,Control,Male,African American,20.98,3557.253333,510.4833333
+5708,Control,Female,Hispanic,0.43,5634.193333,84.29333333
+5669,Control,Female,African American,24.75,3006.166667,2682.2
+5643,Control,Male,African American,17.32,4817.343333,427.9233333
+5579,Control,Female,African American,25.27,5076.403333,2873.006667
+5577,Control,Male,,21.46,2912.993333,383.8266667
+5566,Control,Female,African American,15.83,4606.083333,98.36
+5559,Control,Female,Caucasian,19.79,2727.886667,382.66
+5554,Control,Female,Caucasian,13.01,5040.683333,3315.333333
+5408,Control,Male,African American,6.85,,
+5401,Control,Female,Caucasian,18.68,,1088.953333
+5376,Control,Male,Caucasian,13.28,2699.453333,938.1766667
+5346,Control,Female,Caucasian,24.96,2313.546667,551.0066667
+5334,Control,Male,Hispanic,12.68,,
+5309,Control,Female,Caucasian,14.45,,
+5282,Control,Male,Hispanic,2.84,6258.526667,84.91666667
+5185,Control,Male,Caucasian,21.95,,
+5077,Control,Female,Caucasian,16.71,3054.046667,424.88
+4670,Control,Male,Caucasian,4.65,,
+4337,Control,Male,African American,8.25,3165.98,2082.05
+1708,Control,Female,African American,8.14,1961.386667,0
+1674,Control,Male,Caucasian,8.93,5429.863333,
+1284,Control,Female,African American,3.34,7313.48,455.9533333
+1349,ASD - Autism,Male,Caucasian,5.6,,1994.63
+4671,ASD - Autism,Female,African American,4.45,2546.21,747.8533333
+4999,ASD - Autism,Male,Caucasian,20.75,1276.36,1055.076667
+5027,ASD - Autism,Male,African American,37.97,1350.38,3147.75
+5115,ASD - Autism,Male,Caucasian,46.37,,
+5144,ASD - Autism,Male,Caucasian,7.15,3817.866667,1625.953333
+5176,ASD - Autism,Male,African American,22.55,3260.216667,3136.413333
+5278,ASD - Autism,Female,Caucasian,15.89,1765.776667,1579.27
+5297,ASD - Autism,Male,Caucasian,33.23,2723.86,2657.866667
+5303,ASD - Autism,Male,African American,67.33,,
+5403,ASD - Autism,Male,Caucasian,16.73,2897.793333,1096.393333
+5419,ASD - Autism,Female,Caucasian,19.96,2474.066667,3739.466667
+5565,ASD - Autism,Male,African American,12.24,1905.583333,1970.956667
+5574,ASD - Autism,Male,African American,23.69,1936.57,130.25
+5771,ASD - Autism,Female,Caucasian,27.84,,975.0366667
+5841,ASD - Autism,Male,Caucasian,12.51,,4403.153333
+5864,ASD - Autism,Male,Caucasian,20.24,,2523.43
