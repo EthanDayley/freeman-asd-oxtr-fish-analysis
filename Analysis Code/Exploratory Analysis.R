@@ -2,6 +2,8 @@ library(tidyverse)
 library(broom)
 library(ggfortify)
 library(cowplot)
+library(ggpubr)
+library(dplyr)
 
 
 ############################################
@@ -33,7 +35,7 @@ merged_data$Sex <- as.factor(merged_data$Sex)
 merged_data.asd <- merged_data %>% filter(Disorder == "ASD - Autism")
 merged_data.nt <- merged_data %>% filter(Disorder != "ASD - Autism")
 
-hist_vars <- c("nbm_brightness", "nbm_area", "nbm_area_ratio", "vp_brightness", "vp_area")
+hist_vars <- c("nbm_brightness", "nbm_area", "vp_brightness", "vp_area")
 
 # generate log and sqrt transformations
 for (variable_name in hist_vars) {
@@ -118,19 +120,59 @@ for (df.name in names(dflist)) {
       scale_fill_manual(values = c("ASD - Autism" = "#619CFF", "Control" = "#F8766D")) +
       scale_color_manual(values = c("ASD - Autism" = "#619CFF", "Control" = "#F8766D")) +
       geom_histogram(aes(y = ..density..), alpha = 0.5, position = "identity", binwidth = bw)
+    plot.qq<-ggplot(df, aes_string(sample = variable_name)) +
+      stat_qq() +
+      stat_qq_line()
+    plot.qq.log<-ggplot(df, aes_string(sample = paste(variable_name, ".log", sep=""))) +
+      stat_qq() +
+      stat_qq_line()
+    plot.qq.sqrt<-ggplot(df, aes_string(sample = paste(variable_name, ".log", sep=""))) +
+      stat_qq() +
+      stat_qq_line()
     
     # add plots to list
     plist[[paste(variable_name, "plot.hist", sep=".")]] <- plot.hist
     plist[[paste(variable_name, "plot.hist.log", sep=".")]] <- plot.hist.log
     plist[[paste(variable_name, "plot.hist.sqrt", sep=".")]] <- plot.hist.sqrt
-    plist[[paste(variable_name, "plot.hist.col", sep=".")]] <- plot.hist.col
+    # plist[[paste(variable_name, "plot.hist.col", sep=".")]] <- plot.hist.col
+    plist[[paste(variable_name, "plot.qq", sep=".")]] <- plot.qq
+    plist[[paste(variable_name, "plot.qq.log", sep=".")]] <- plot.qq.log
+    plist[[paste(variable_name, "plot.qq.sqrt", sep=".")]] <- plot.qq.sqrt
     
     print("Outputting plots...")
-    png(paste(EXPORT_DIR, "distribution_histograms_", df.name, "_", variable_name, ".png", sep=""), height = 4000, width = 4000, res = 300)
-    plot.merged<-cowplot::plot_grid(plotlist = plist, labels = "AUTO", ncol = 2)
-    print(plot.merged)
+    title <- ggdraw() + draw_label(paste(variable_name, df.name, sep=" - "), fontface='bold')
+    png(paste(EXPORT_DIR, "distribution_histograms_", df.name, "_", variable_name, ".png", sep=""), height = 4000, width = 6000, res = 300)
+    plot.merged<-cowplot::plot_grid(plotlist = plist, labels = "AUTO", ncol = 3)
+    plot.titled<-cowplot::plot_grid(title, plot.merged, ncol = 1, rel_heights = c(0.1, 1))
+    print(plot.titled)
     dev.off()
   }
   print("============================================")
 }
+
+############################################
+#        T-TESTS BETWEEN GROUPS            #
+############################################
+
+for (variable_name in hist_vars) {
+  print(variable_name)
+  print(ggboxplot(merged_data, x = "Disorder", y = variable_name, color = "Disorder") + ggtitle(variable_name))
+  
+  print(shapiro.test(merged_data.asd[,variable_name]))
+  print(shapiro.test(merged_data.nt[,variable_name]))
+  
+  print(var.test(merged_data.asd[,variable_name], merged_data.nt[,variable_name]))
+  
+  print(t.test(merged_data.asd[,variable_name], merged_data.nt[,variable_name], var.equal = T))
+  print(t.test(merged_data.asd[,variable_name], merged_data.nt[,variable_name], var.equal = F))
+  print(wilcox.test(merged_data.asd[,variable_name], merged_data.nt[,variable_name]))
+  print("==========================================")
+}
+
+ggboxplot(merged_data, x = "Disorder", y = "nbm_brightness", color = "Disorder")
+with(merged_data, shapiro.test(nbm_brightness[Disorder == "ASD - Autism"]))
+with(merged_data, shapiro.test(nbm_brightness[Disorder == "Control"]))
+
+# since control group has non-normal distribution, unpaired two-sample Wilcoxon test
+wilcox.test(nbm_brightness ~ Disorder, data = merged_data)
 
