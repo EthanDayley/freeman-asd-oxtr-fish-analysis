@@ -117,15 +117,13 @@ for (df.name in names(dflist)) {
     plot.hist.col<-ggplot(df, aes_string(x = variable_name, color = "Disorder", fill = "Disorder")) +
       scale_fill_manual(values = c("ASD - Autism" = "#619CFF", "Control" = "#F8766D")) +
       scale_color_manual(values = c("ASD - Autism" = "#619CFF", "Control" = "#F8766D")) +
-      geom_histogram(alpha = 0.5, position = "identity", binwidth = bw)
+      geom_histogram(aes(y = ..density..), alpha = 0.5, position = "identity", binwidth = bw)
     
     # add plots to list
     plist[[paste(variable_name, "plot.hist", sep=".")]] <- plot.hist
     plist[[paste(variable_name, "plot.hist.log", sep=".")]] <- plot.hist.log
     plist[[paste(variable_name, "plot.hist.sqrt", sep=".")]] <- plot.hist.sqrt
     plist[[paste(variable_name, "plot.hist.col", sep=".")]] <- plot.hist.col
-    # plot.merged<-plot_grid(plot.hist, plot.hist.log, plot.hist.sqrt, plot.hist.col, labels = "AUTO")
-    # print(plot.merged)
     
     print("Outputting plots...")
     png(paste(EXPORT_DIR, "distribution_histograms_", df.name, "_", variable_name, ".png", sep=""), height = 4000, width = 4000, res = 300)
@@ -135,3 +133,4 @@ for (df.name in names(dflist)) {
   }
   print("============================================")
 }
+
