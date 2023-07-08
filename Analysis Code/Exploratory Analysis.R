@@ -51,11 +51,15 @@ for (variable_name in hist_vars) {
 
 # generate statistics and plots
 dflist <- list(all = merged_data, asd = merged_data.asd, nt = merged_data.nt)
+
+
 for (df.name in names(dflist)) {
   print(df.name)
   df<-dflist[[df.name]]
-  plist <- list()
+  
   for (variable_name in hist_vars) {
+    plist <- list()
+    
     print("############################")
     print(variable_name)
     
@@ -98,7 +102,7 @@ for (df.name in names(dflist)) {
     plot.hist <- ggplot(df, aes_string(x = variable_name)) +
       geom_histogram(aes(y = ..density..), color = "black", fill = "white", binwidth = bw) +
       geom_density(alpha = .2, fill = "#FF6666") +
-      geom_vline(aes(xintercept = .data[[v.mean]]), color = "blue", linetype = "dashed", size = 1) +
+      geom_vline(aes(xintercept = v.mean), color = "blue", linetype = "dashed", size = 1) +
       norm_curve
     plot.hist.log <- ggplot(df, aes_string(x = paste(variable_name, ".log", sep=""))) +
       geom_histogram(aes(y = ..density..), color = "black", fill = "white", binwidth = bw.log) +
@@ -122,11 +126,12 @@ for (df.name in names(dflist)) {
     plist[[paste(variable_name, "plot.hist.col", sep=".")]] <- plot.hist.col
     # plot.merged<-plot_grid(plot.hist, plot.hist.log, plot.hist.sqrt, plot.hist.col, labels = "AUTO")
     # print(plot.merged)
+    
+    print("Outputting plots...")
+    png(paste(EXPORT_DIR, "distribution_histograms_", df.name, "_", variable_name, ".png", sep=""), height = 4000, width = 4000, res = 300)
+    plot.merged<-cowplot::plot_grid(plotlist = plist, labels = "AUTO", ncol = 2)
+    print(plot.merged)
+    dev.off()
   }
-  print("Outputting plots...")
-  png(paste(EXPORT_DIR, "distribution_histograms_", df.name, ".png", sep=""), height = 4000, width = 4000, res = 300)
-  plot.merged<-cowplot::plot_grid(plotlist = plist, labels = "AUTO", cols = 4)
-  print(plot.merged)
-  dev.off()
   print("============================================")
 }
