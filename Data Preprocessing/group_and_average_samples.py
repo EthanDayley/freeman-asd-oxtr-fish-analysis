@@ -80,19 +80,14 @@ STATS_FILES = [
         'columns': [
             {
                 'type': 'mean',
-                'current_name': 'Area (1st integration)',
-                'output_name': 'area'
-            },
-            {
-                'type': 'mean',
-                'current_name': 'Brightness (1st integration)',
-                'output_name': 'brightness'
+                'current_name': 'Area ratio (1st)',
+                'output_name': 'area_ratio'
             },
             {
                 'type': 'mean_ratio',
                 'numerator': 'Brightness (1st integration)',
                 'denominator': 'Area (target area)',
-                'output_name': 'brightness_per_area'
+                'output_name': 'brightness_ratio'
             }
             
         ]
