@@ -19,7 +19,13 @@ class StatsTable:
     def __get_column_indices(self):
         indexed_columns = {}
         for i in self.columns:
-            indexed_columns[i['current_name']] = self.raw_columns.index(i['current_name'])
+            if i['type'] == 'mean':
+                indexed_columns[i['current_name']] = self.raw_columns.index(i['current_name'])
+            elif i['type'] == 'mean_ratio':
+                indexed_columns[i['output_name']] = {}
+                indexed_columns[i['numerator']] = self.raw_columns.index(i['numerator'])
+                indexed_columns[i['denominator']] = self.raw_columns.index(i['denominator'])
+            else: raise RuntimeError("Unknown column type \"" + str(i['type']) + "\"")
         return indexed_columns
 
     def load(self):
@@ -31,7 +37,7 @@ class StatsTable:
 
     def export_stats(self):
         export_columns = ['sample_id'] + [i['output_name'] for i in self.columns]
-        column_names = [i['current_name'] for i in self.columns]
+        column_names = [i['output_name'] for i in self.columns]
         export_rows = []
         indexed_cols = self.__get_column_indices()
         current_sample_id = ''
@@ -43,8 +49,18 @@ class StatsTable:
                 current_sample_id = curr_row[0].split()[0]
                 values_by_column = {i: [] for i in values_by_column}
             elif current_sample_id == '': current_sample_id = curr_row[0].split()[0]
-            for col in column_names:
-                values_by_column[col].append(curr_row[indexed_cols[col]])
+            for col in self.columns:
+                if col['type'] == 'mean':
+                    values_by_column[col['output_name']].append(curr_row[indexed_cols[col['current_name']]])
+                elif col['type'] == 'mean_ratio':
+                    val = float(curr_row[indexed_cols[col['numerator']]]) / float(curr_row[indexed_cols[col['denominator']]])
+                    values_by_column[col['output_name']].append(val)
+                else: raise RuntimeError("Unknown column type \"" + str(col['type']) + "\"")
+        
+        # final sample id, average across collected values and add row to table
+        export_rows.append([current_sample_id] + [self.__mean(values_by_column[col]) for col in column_names])
+        current_sample_id = curr_row[0].split()[0]
+        values_by_column = {i: [] for i in values_by_column}
 
         return {'column_headers': export_columns, 'rows': export_rows}
 
@@ -63,16 +79,20 @@ STATS_FILES = [
         'export_filename': 'nbm_oxtr_collocation_grouped.csv',
         'columns': [
             {
+                'type': 'mean',
                 'current_name': 'Area (1st integration)',
                 'output_name': 'area'
             },
             {
-                'current_name': 'Area ratio (1st)',
-                'output_name': 'area_ratio'
-            },
-            {
+                'type': 'mean',
                 'current_name': 'Brightness (1st integration)',
                 'output_name': 'brightness'
+            },
+            {
+                'type': 'mean_ratio',
+                'numerator': 'Brightness (1st integration)',
+                'denominator': 'Area (target area)',
+                'output_name': 'brightness_per_area'
             }
             
         ]
@@ -82,10 +102,12 @@ STATS_FILES = [
         'export_filename': 'vp_oxtr_grouped.csv',
         'columns': [
             {
+                'type': 'mean',
                 'current_name': 'Area (integration)',
                 'output_name': 'area'
             },
             {
+                'type': 'mean',
                 'current_name': 'Brightness (integration)',
                 'output_name': 'brightness'
             }
@@ -101,6 +123,5 @@ for file in STATS_FILES:
     grouped = stats.export_stats()
     table = [grouped['column_headers']] + grouped['rows']
     csv = '\n'.join([','.join([str(j) for j in i]) for i in table])
-    print(csv)
     with open(os.path.join(EXPORT_FILEPATH, file['export_filename']), 'w') as f:
         f.write(csv)
