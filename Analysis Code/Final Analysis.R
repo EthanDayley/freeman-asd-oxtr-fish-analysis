@@ -39,8 +39,6 @@ merged_data.nt <- merged_data %>% dplyr::filter(Disorder != "ASD - Autism")
 #      COMPARE MEANS BETWEEN GROUPS        #
 ############################################
 
-### GRAPHICAL COMPARISON
-
 vars.mean_comparison <- list(
   nbm_brightness_ratio = "NBM Brightness Ratio",
   nbm_area_ratio = "NBM Area Ratio",
@@ -49,6 +47,8 @@ vars.mean_comparison <- list(
   oxtr_density_in_nbm = "OXTR Density in NBM",
   oxtr_density_in_vp = "OXTR Density in VP"
   )
+
+### GRAPHICAL COMPARISON
 
 for (variable_name in names(vars.mean_comparison)) {
   print(variable_name)
@@ -79,7 +79,62 @@ for (variable_name in names(vars.mean_comparison)) {
         )
 }
 
-### NUMERICAL COMPARISON
+### DESCRIPTIVE STATISTICS:
+ds_table <- data.frame(
+  variable_names = character(),
+  mean = double(),
+  sd = double(),
+  range = character()
+  )
+
+for (variable_name in names(vars.mean_comparison)) {
+  print(variable_name)
+  
+  # calculate means
+  ds.mean.all<-round(mean(merged_data[,variable_name], na.rm = T), 2)
+  ds.mean.asd<-round(mean(merged_data.asd[,variable_name], na.rm = T), 2)
+  ds.mean.nt<-round(mean(merged_data.nt[,variable_name], na.rm = T), 2)
+  print(ds.mean.all)
+  print(ds.mean.asd)
+  print(ds.mean.nt)
+  
+  # calculate sds
+  ds.sd.all<-round(sd(merged_data[,variable_name], na.rm = T), 2)
+  ds.sd.asd<-round(sd(merged_data.asd[,variable_name], na.rm = T), 2)
+  ds.sd.nt<-round(sd(merged_data.nt[,variable_name], na.rm = T), 2)
+  print(ds.sd.all)
+  print(ds.sd.asd)
+  print(ds.sd.nt)
+  
+  # calculate ranges
+  ds.range.all<-range(merged_data[,variable_name], na.rm = T)
+  ds.range.asd<-range(merged_data.asd[,variable_name], na.rm = T)
+  ds.range.nt<-range(merged_data.nt[,variable_name], na.rm = T)
+  ds.range.all.c<-paste("[", round(ds.range.all[1], 2), ", ", round(ds.range.all[2], 2), "]", sep = "")
+  ds.range.asd.c<-paste("[", round(ds.range.asd[1], 2), ", ", round(ds.range.asd[2], 2), "]", sep = "")
+  ds.range.nt.c<-paste("[", round(ds.range.nt[1], 2), ", ", round(ds.range.nt[2], 2), "]", sep = "")
+  
+  ds_table<-rbind(ds_table,
+        data.frame(
+          variable_names = c(variable_name),
+          mean_all = c(ds.mean.all),
+          mean_asd = c(ds.mean.asd),
+          mean_nt = c(ds.mean.nt),
+          sd_all = c(ds.sd.all),
+          sd_asd = c(ds.sd.asd),
+          sd_nt = c(ds.sd.nt),
+          range_all = c(ds.range.all.c),
+          range_asd = c(ds.range.asd.c),
+          range_nt = c(ds.range.nt.c)
+        )
+  )
+  print("==========================================")
+}
+ds_table
+ds_table.export_name <- paste(EXPORT_DIR, "descriptive_statistics.csv")
+write.csv(ds_table, ds_table.export_name, row.names = F)
+
+### NUMERICAL COMPARISON:
 comparison_table <- data.frame(
   variable_names = character(),
   shapiro_wilk_asd = double(),
