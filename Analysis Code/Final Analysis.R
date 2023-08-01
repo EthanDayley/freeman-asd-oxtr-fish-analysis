@@ -5,11 +5,15 @@ library(stringr)
 library(coin)
 library(PerformanceAnalytics)
 library(Hmisc)
+library(onewaytests)
+library(rstatix)
+library(rcompanion)
 
 ############################################
 #            SET VARIABLES                 #
 ############################################
 EXPORT_DIR <- "../Analysis Output/Final/"
+IMG_EXTENSION <- ".png"
 
 
 ############################################
@@ -24,7 +28,7 @@ colnames(specimen_info)[1] = "sample_id"
 merged_data <- merge(x = fish_data, y = specimen_info, by = "sample_id", all.x = T)
 
 # remove samples without any corresponding binding data
-merged_data<-merged_data[!is.na(merged_data$oxtr_density_in_nbm) | !is.na(merged_data$oxtr_density_in_vp),]
+# merged_data<-merged_data[!is.na(merged_data$oxtr_density_in_nbm) | !is.na(merged_data$oxtr_density_in_vp),]
 
 # change Disorder / Sex / Race to factors
 merged_data$Disorder <- as.factor(merged_data$Disorder)
@@ -55,15 +59,17 @@ for (variable_name in names(vars.mean_comparison)) {
   variable_title <- vars.mean_comparison[[variable_name]]
   print(variable_title)
   
-  name.plot <- paste(EXPORT_DIR, "asd_vs_nt_violin_", variable_name, ".png", sep = "")
+  name.plot <- paste(EXPORT_DIR, "asd_vs_nt_violin_", variable_name, IMG_EXTENSION, sep = "")
   neurotype.levels <- as.factor(c("ASD - Autism", "Control"))
   
   vplot <- ggplot(merged_data, aes_string(x = "Disorder", y = variable_name, fill = "Disorder")) +
     geom_violin(width = .4, alpha = .5) +
     # ggplot2::scale_color_grey() +
-    geom_boxplot(width = .1, cex = .5, color = "black") +
+    geom_boxplot(width = .1, cex = .5, color = "black", outlier.shape = NA) +
     ggplot2::scale_fill_grey() +
     theme_minimal() +
+    geom_jitter(size = 2, shape = 16, position = position_jitter(0.2)) +
+    # geom_dotplot(binaxis = "y", stackdir = "center", dotsize = 1, color = "black") +
     scale_x_discrete(limits = neurotype.levels, labels = c("Autistic", "Allistic")) +
     xlab("Neurotype") +
     ylab(variable_title) +
@@ -83,6 +89,7 @@ for (variable_name in names(vars.mean_comparison)) {
 ds_table <- data.frame(
   variable_names = character(),
   mean = double(),
+  median = double(),
   sd = double(),
   range = character()
   )
@@ -97,6 +104,14 @@ for (variable_name in names(vars.mean_comparison)) {
   print(ds.mean.all)
   print(ds.mean.asd)
   print(ds.mean.nt)
+  
+  # calculate medians
+  ds.median.all<-round(median(merged_data[,variable_name], na.rm = T), 2)
+  ds.median.asd<-round(median(merged_data.asd[,variable_name], na.rm = T), 2)
+  ds.median.nt<-round(median(merged_data.nt[,variable_name], na.rm = T), 2)
+  print(ds.median.all)
+  print(ds.median.asd)
+  print(ds.median.nt)
   
   # calculate sds
   ds.sd.all<-round(sd(merged_data[,variable_name], na.rm = T), 2)
@@ -120,6 +135,9 @@ for (variable_name in names(vars.mean_comparison)) {
           mean_all = c(ds.mean.all),
           mean_asd = c(ds.mean.asd),
           mean_nt = c(ds.mean.nt),
+          median_all = c(ds.median.all),
+          median_asd = c(ds.median.asd),
+          median_nt = c(ds.median.nt),
           sd_all = c(ds.sd.all),
           sd_asd = c(ds.sd.asd),
           sd_nt = c(ds.sd.nt),
@@ -140,6 +158,7 @@ comparison_table <- data.frame(
   shapiro_wilk_asd = double(),
   shapiro_wilk_nt = double(),
   variance_f = double(),
+  variance_bf = double(),
   students_t = double(),
   welchs_t = double(),
   wilcoxon_mann_whitney = double()
@@ -151,20 +170,46 @@ for (variable_name in names(vars.mean_comparison)) {
   # shapiro-wilk test of normality
   test.sw.asd <- shapiro.test(merged_data.asd[,variable_name])
   test.sw.nt <- shapiro.test(merged_data.nt[,variable_name])
-  print(test.sw.asd)
-  print(test.sw.nt)
+  # print(test.sw.asd)
+  # print(test.sw.nt)
   
   # f-test to compare variances
   test.varf <- var.test(merged_data.asd[,variable_name], merged_data.nt[,variable_name])
-  print(test.varf)
+  
+  # Brown-Forsythe test to compare variances
+  test.bf <- bf.test(reformulate('Disorder', variable_name), merged_data)
   
   # t-tests (Student's and Welch's), as well as Wilcoxon rank-sum test
   test.ts <- t.test(merged_data.asd[,variable_name], merged_data.nt[,variable_name], var.equal = T)
   test.tw <- t.test(merged_data.asd[,variable_name], merged_data.nt[,variable_name], var.equal = F)
   test.wmw <- coin::wilcox_test(reformulate('Disorder', variable_name), merged_data, distribution = "exact")
-  print(test.ts)
-  print(test.tw)
-  print(test.wmw)
+  # print(test.ts)
+  # print(test.tw)
+  print("WMW U-test:")
+  print("########################")
+  print("ASD Sample Size: ")
+  print(length(na.omit(merged_data.asd[,variable_name])))
+  print("NT Sample Size: ")
+  print(length(na.omit(merged_data.nt[,variable_name])))
+  print("U-Stat: ")
+  print(coin::statistic(test.wmw))
+  print("P-value:")
+  print(coin::pvalue(test.wmw))
+  print("Vargha and Delaney's A:")
+  print(vda(reformulate('Disorder', variable_name), merged_data))
+  print("########################")
+  
+  print("Welch's T-test:")
+  print("########################")
+  print("Degrees of Freedom: ")
+  print(test.tw$parameter)
+  print("T-Stat: ")
+  print(test.tw$statistic)
+  print("P-value:")
+  print(test.tw$p.value)
+  print("Cohen's D: ")
+  print(cohens_d(merged_data, reformulate('Disorder', variable_name)))
+  print("########################")
   
   comparison_table<-rbind(comparison_table,
         data.frame(
@@ -172,6 +217,7 @@ for (variable_name in names(vars.mean_comparison)) {
           shapiro_wilk_asd = c(test.sw.asd$p.value),
           shapiro_wilk_nt = c(test.sw.nt$p.value),
           variance_f = c(test.varf$p.value),
+          variance_bf = c(test.bf$p.value),
           students_t = c(test.ts$p.value),
           welchs_t = c(test.tw$p.value),
           wilcoxon_mann_whitney = c(pvalue(test.wmw))
@@ -182,6 +228,88 @@ for (variable_name in names(vars.mean_comparison)) {
 
 comparison_table
 
+############################################
+#          GENERATE SCATTERPLOTS           #
+############################################
+sp.nod.nbr.all<-ggplot(merged_data, aes(x = oxtr_density_in_nbm, y = nbm_brightness_ratio)) +
+  geom_point() +
+  geom_smooth(se = F) +
+  theme_minimal() +
+  xlab("OXTR Density in NBM") +
+  ylab("NBM Brightness Ratio")
+
+sp.xvars <-  list(
+  oxtr_density_in_nbm = "OXTR Density in NBM",
+  oxtr_density_in_vp = "OXTR Density in VP"
+)
+sp.yvars <-list(
+  nbm_brightness_ratio = "NBM Brightness Ratio",
+  nbm_area_ratio = "NBM Area Ratio",
+  vp_brightness = "VP Brightness",
+  vp_area = "VP Area"
+)
+for (xvar_name in names(sp.xvars)) {
+  xvar_title <- sp.xvars[[xvar_name]]
+  for (yvar_name in names(sp.yvars)) {
+    yvar_title <- sp.yvars[[yvar_name]]
+    
+    # generate plots
+    sp.all <- ggplot(merged_data, aes_string(x = xvar_name, y = yvar_name)) +
+      geom_point(aes(size = 2)) +
+      # geom_smooth(se = F, span = 0.9) +
+      theme_minimal() +
+      xlab(xvar_title) +
+      ylab(yvar_title)
+    print(sp.all)
+    
+    sp.asd <- ggplot(merged_data.asd, aes_string(x = xvar_name, y = yvar_name)) +
+      geom_point(aes(size = 2)) +
+      # geom_smooth(se = F, span = 0.9) +
+      theme_minimal() +
+      xlab(xvar_title) +
+      ylab(yvar_title)
+    
+    sp.nt <- ggplot(merged_data.nt, aes_string(x = xvar_name, y = yvar_name)) +
+      geom_point(aes(size = 2)) +
+      # geom_smooth(se = F, span = 0.9) +
+      theme_minimal() +
+      xlab(xvar_title) +
+      ylab(yvar_title)
+    
+    # generate plot titles
+    sp.all.name <- paste(EXPORT_DIR, "scatterplot_", xvar_name, "_vs_", yvar_name, "_all", IMG_EXTENSION, sep = "")
+    sp.asd.name <- paste(EXPORT_DIR, "scatterplot_", xvar_name, "_vs_", yvar_name, "_asd", IMG_EXTENSION, sep = "")
+    sp.nt.name <- paste(EXPORT_DIR, "scatterplot_", xvar_name, "_vs_", yvar_name, "_nt", IMG_EXTENSION, sep = "")
+    
+    # save plots
+    ggsave(
+      sp.all.name,
+      sp.all,
+      width = 4,
+      height = 4,
+      dpi = 2000,
+      bg = "white"
+    )
+    ggsave(
+      sp.asd.name,
+      sp.asd,
+      width = 4,
+      height = 4,
+      dpi = 2000,
+      bg = "white"
+    )
+    ggsave(
+      sp.nt.name,
+      sp.nt,
+      width = 4,
+      height = 4,
+      dpi = 2000,
+      bg = "white"
+    )
+  }
+}
+
+# for (variable_name in names(vars.mean_comparison)) {
 
 ############################################
 #      GENERATE CORRELATION TABLES         #
@@ -389,47 +517,47 @@ write.csv(cortable.kt.nt, paste(EXPORT_DIR, "kendall_correlations_nt.csv"))
 
 
 ### charts:
-png(paste(EXPORT_DIR, "correlation_pearson_all.png", sep=""), height = 2000, width = 2000, res = 300)
+png(paste(EXPORT_DIR, "correlation_pearson_all", IMG_EXTENSION, sep=""), height = 2000, width = 2000, res = 300)
 chart.Correlation(merged_data.coll.all, pch = 19, method = "pearson")
 mtext("Pearson Correlations - All Samples", side = 3, line = 3, font = 2, cex = 1.4)
 dev.off()
 
-png(paste(EXPORT_DIR, "correlation_spearman_all.png", sep=""), height = 2000, width = 2000, res = 300)
+png(paste(EXPORT_DIR, "correlation_spearman_all", IMG_EXTENSION, sep=""), height = 2000, width = 2000, res = 300)
 chart.Correlation(merged_data.coll.all, pch = 19, method = "spearman")
 mtext("Spearman Correlations - All Samples", side = 3, line = 3, font = 2, cex = 1.4)
 dev.off()
 
-png(paste(EXPORT_DIR, "correlation_kendall_all.png", sep=""), height = 2000, width = 2000, res = 300)
+png(paste(EXPORT_DIR, "correlation_kendall_all", IMG_EXTENSION, sep=""), height = 2000, width = 2000, res = 300)
 chart.Correlation(merged_data.coll.all, pch = 19, method = "kendall")
 mtext("Kendall Correlations - All Samples", side = 3, line = 3, font = 2, cex = 1.4)
 dev.off()
 
-png(paste(EXPORT_DIR, "correlation_pearson_asd.png", sep=""), height = 2000, width = 2000, res = 300)
+png(paste(EXPORT_DIR, "correlation_pearson_asd", IMG_EXTENSION, sep=""), height = 2000, width = 2000, res = 300)
 chart.Correlation(merged_data.coll.asd, pch = 19, method = "pearson")
 mtext("Pearson Correlations - ASD Samples", side = 3, line = 3, font = 2, cex = 1.4)
 dev.off()
 
-png(paste(EXPORT_DIR, "correlation_spearman_asd.png", sep=""), height = 2000, width = 2000, res = 300)
+png(paste(EXPORT_DIR, "correlation_spearman_asd", IMG_EXTENSION, sep=""), height = 2000, width = 2000, res = 300)
 chart.Correlation(merged_data.coll.asd, pch = 19, method = "spearman")
 mtext("Spearman Correlations - ASD Samples", side = 3, line = 3, font = 2, cex = 1.4)
 dev.off()
 
-png(paste(EXPORT_DIR, "correlation_kendall_asd.png", sep=""), height = 2000, width = 2000, res = 300)
+png(paste(EXPORT_DIR, "correlation_kendall_asd", IMG_EXTENSION, sep=""), height = 2000, width = 2000, res = 300)
 chart.Correlation(merged_data.coll.asd, pch = 19, method = "kendall")
 mtext("Kendall Correlations - ASD Samples", side = 3, line = 3, font = 2, cex = 1.4)
 dev.off()
 
-png(paste(EXPORT_DIR, "correlation_pearson_nt.png", sep=""), height = 2000, width = 2000, res = 300)
+png(paste(EXPORT_DIR, "correlation_pearson_nt", IMG_EXTENSION, sep=""), height = 2000, width = 2000, res = 300)
 chart.Correlation(merged_data.coll.nt, pch = 19, method = "pearson")
 mtext("Pearson Correlations - NT Samples", side = 3, line = 3, font = 2, cex = 1.4)
 dev.off()
 
-png(paste(EXPORT_DIR, "correlation_spearman_nt.png", sep=""), height = 2000, width = 2000, res = 300)
+png(paste(EXPORT_DIR, "correlation_spearman_nt", IMG_EXTENSION, sep=""), height = 2000, width = 2000, res = 300)
 chart.Correlation(merged_data.coll.nt, pch = 19, method = "spearman")
 mtext("Spearman Correlations - NT Samples", side = 3, line = 3, font = 2, cex = 1.4)
 dev.off()
 
-png(paste(EXPORT_DIR, "correlation_kendall_nt.png", sep=""), height = 2000, width = 2000, res = 300)
+png(paste(EXPORT_DIR, "correlation_kendall_nt", IMG_EXTENSION, sep=""), height = 2000, width = 2000, res = 300)
 chart.Correlation(merged_data.coll.nt, pch = 19, method = "kendall")
 mtext("Kendall Correlations - NT Samples", side = 3, line = 3, font = 2, cex = 1.4)
 dev.off()
