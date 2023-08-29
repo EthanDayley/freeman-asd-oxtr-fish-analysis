@@ -7,6 +7,14 @@ STATISTICS_FILES = [
         'column_prefix': 'nbm'
     },
     {
+        'import_filename': 'nbm_oxtr_collocation_inverse_grouped.csv',
+        'column_prefix': 'nbm'
+    },
+    {
+        'import_filename': 'nbm_oxtr_grouped.csv',
+        'column_prefix': 'nbm'
+    },
+    {
         'import_filename': 'vp_oxtr_grouped.csv',
         'column_prefix': 'vp'
     }

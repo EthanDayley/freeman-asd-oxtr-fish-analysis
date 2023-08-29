@@ -93,6 +93,40 @@ STATS_FILES = [
         ]
     },
     {
+        'import_filename': 'NBM_OXTR_Coll_InvStatistics.csv',
+        'export_filename': 'nbm_oxtr_collocation_inverse_grouped.csv',
+        'columns': [
+            {
+                'type': 'mean',
+                'current_name': 'Area ratio (1st)',
+                'output_name': 'inv_area_ratio'
+            },
+            {
+                'type': 'mean_ratio',
+                'numerator': 'Brightness (1st integration)',
+                'denominator': 'Area (target area)',
+                'output_name': 'inv_brightness_ratio'
+            }
+            
+        ]
+    },
+    {
+        'import_filename': 'NBM_OXTRStatistics.csv',
+        'export_filename': 'nbm_oxtr_grouped.csv',
+        'columns': [
+            {
+                'type': 'mean',
+                'current_name': 'Area (integration)',
+                'output_name': 'area'
+            },
+            {
+                'type': 'mean',
+                'current_name': 'Brightness (integration)',
+                'output_name': 'brightness'
+            }
+        ]
+    },
+    {
         'import_filename': 'VP_OXTRStatistics.csv',
         'export_filename': 'vp_oxtr_grouped.csv',
         'columns': [
@@ -113,10 +147,14 @@ STATS_FILES = [
 
 for file in STATS_FILES:
     filepath = os.path.join(IMPORT_FILEPATH, file['import_filename'])
+    print("grouping:\t", filepath)
     stats = StatsTable(filepath, file['columns'])
     stats.load()
     grouped = stats.export_stats()
     table = [grouped['column_headers']] + grouped['rows']
     csv = '\n'.join([','.join([str(j) for j in i]) for i in table])
-    with open(os.path.join(EXPORT_FILEPATH, file['export_filename']), 'w') as f:
+    export_filename = os.path.join(EXPORT_FILEPATH, file['export_filename'])
+    print("exporting to:\t", export_filename)
+    print()
+    with open(export_filename, 'w') as f:
         f.write(csv)
