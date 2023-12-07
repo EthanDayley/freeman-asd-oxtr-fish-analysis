@@ -1,0 +1,397 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Load Libraries
+
+```{r}
+library(dplyr)
+library(DHARMa)
+library(ggplot2)
+library(emmeans)
+```
+
+# Load and Merge Data
+
+Load fISH statistics files, making sure to fix incompatible sample ids.
+```{r}
+dat.raw <- read.csv("../Preprocessed\ Statistics\ Files/nbm_and_vp_stats_merged.csv")
+# 4607 -> 4670
+dat.raw$sample_id[dat.raw$sample_id == "4607"] <- "4670"
+# 5401-1 -> 5401
+dat.raw$sample_id[dat.raw$sample_id == "5401-1"] <- "5401"
+dat.raw
+```
+
+Load specimen info, convert categorical variables to factors, align terminology to better match manuscript, and change name of column for merge.
+```{r}
+dat.info <- read.csv("../Preprocessed\ Statistics\ Files/specimen\ info_ASD\ genetics.csv")
+dat.info$Disorder[dat.info$Disorder == "ASD - Autism"] <- "ASD"
+dat.info$Disorder[dat.info$Disorder == "Control"] <- "AST"
+
+colnames(dat.info)[2] = "Neurotype"
+colnames(dat.info)[1] = "sample_id"
+
+dat.info$Neurotype <- as.factor(dat.info$Neurotype)
+dat.info$Race <- as.factor(dat.info$Race)
+dat.info$Sex <- as.factor(dat.info$Sex)
+
+dat.info
+```
+
+Left join fISH statistics with specimen info.
+```{r}
+dat.merged <- merge(x = dat.raw, y = dat.info, by = "sample_id", all.x = T)
+dat.merged
+```
+
+## Commentary
+The columns above correspond to the metrics described in the manuscript.
+See the table below for a mapping between variable names and descriptions in the manuscript.
+
+  Full Name (Manuscript)                  Abbreviation (Manuscript)   Column Name (Table)       
+---------------------------------------- --------------------------- ---------------------------
+  NBM *OXTR* mRNA Brightness Ratio        NB                          `nbm_brightness`          
+  NBM *ChAT+ OXTR* mRNA Brightness Ratio  NBRC+                       `nbm_brightness_ratio`
+  NBM *ChAT- OXTR* mRNA Brightness Ratio  NBRC-                       `nbm_inv_brightness_ratio`
+  VP *OXTR* mRNA Brightness Ratio         VB                          `vp_brightness`
+
+# NB Analysis
+We'll now proceeed to analyze our NBM *OXTR* mRNA Brightness metric.
+
+## Exploratory Analysis
+
+First, let's find our sample sizes (split up by group).
+```{r}
+with(filter(dat.merged, !is.na(nbm_brightness)),
+     table(Neurotype, useNA = "ifany"))
+```
+
+Now let's plot the data.
+First, let's try it without any transforms.
+```{r}
+ggplot(dat.merged,
+       aes(x = Neurotype, y = nbm_brightness)) +
+  geom_boxplot(alpha = 0.8, outlier.shape = NA) +
+  geom_jitter(height = 0, width = 0.1)
+```
+
+Since the data appear skewed, let's try a log-transform.
+```{r}
+ggplot(dat.merged,
+       aes(x = Neurotype, y = log(nbm_brightness))) +
+  geom_boxplot(alpha = 0.8, outlier.shape = NA) +
+  geom_jitter(height = 0, width = 0.1)
+```
+Although it's not perfect, NB does appear log-normally distributed.
+Based on just visual examination, there does not appear to be a significant difference between ASD and AST for our NB metric, although NB does appear to trend higher for our ASD group.
+
+Finally, let's compute median values by Neurotype.
+```{r}
+med.nb.orig <- dat.merged %>%
+  group_by(Neurotype) %>%
+  summarize(median = median(nbm_brightness, na.rm = T)) %>%
+  ungroup()
+med.nb.orig
+```
+
+## Model Fits
+Since we have skewed data, we'll try fitting a few different models and evaluate the residuals to choose our best option.
+
+### Non-Transformed
+```{r}
+mod.nt.nb.n <- lm(nbm_brightness ~ Neurotype, data = dat.merged)
+summary(mod.nt.nb.n)
+```
+Now let's examine the model residuals.
+```{r}
+mod.nt.nb.n.res <- simulateResiduals(mod.nt.nb.n, plot = T)
+```
+
+And estimate marginal means:
+```{r}
+emmeans(mod.nt.nb.n, ~Neurotype)
+```
+
+### Log-Transformed
+```{r}
+mod.nt.nb.l <- lm(log(nbm_brightness) ~ Neurotype, data = dat.merged)
+summary(mod.nt.nb.l)
+```
+
+Now let's examine the model residuals.
+```{r}
+mod.nt.nb.l.res <- simulateResiduals(mod.nt.nb.l, plot = T)
+```
+
+And estimate marginal means:
+```{r}
+emmeans(mod.nt.nb.l, ~Neurotype, type = "response")
+```
+
+### Square-Root-Transformed
+```{r}
+mod.nt.nb.s <- lm(sqrt(nbm_brightness) ~ Neurotype, data = dat.merged)
+summary(mod.nt.nb.s)
+```
+
+Now let's examine the model residuals.
+```{r}
+mod.nt.nb.s.res <- simulateResiduals(mod.nt.nb.s, plot = T)
+```
+
+And estimate marginal means:
+```{r}
+emmeans(mod.nt.nb.s, ~Neurotype, type = "response")
+```
+
+### Model Selection
+Based on the statistics above, we'll be selecting the log-transformed model to evaluate our NB metric. 
+This is because it's residuals are approximately normal, while keeping the estimated marginal means close to the median values found above.
+
+---
+
+# NBRC+ Analysis
+We'll now proceeed to analyze our NBM *ChAT+ OXTR* mRNA Brightness Ratio metric.
+
+## Exploratory Analysis
+
+First, let's find our sample sizes (split up by group).
+```{r}
+with(filter(dat.merged, !is.na(nbm_brightness_ratio)),
+     table(Neurotype, useNA = "ifany"))
+```
+
+Now let's plot the data.
+First, let's try it without any transforms.
+```{r}
+ggplot(dat.merged,
+       aes(x = Neurotype, y = nbm_brightness_ratio)) +
+  geom_boxplot(alpha = 0.8, outlier.shape = NA) +
+  geom_jitter(height = 0, width = 0.1)
+```
+
+Although it's not perfect, NBRC+ does appear normally distributed.
+Based on just visual examination, there does not appear to be a significant difference between ASD and AST for our NBRC+ metric, although NBRC+ does appear to trend higher for our ASD group.
+
+Now, let's compute median values by Neurotype.
+```{r}
+med.nbrcp.orig <- dat.merged %>%
+  group_by(Neurotype) %>%
+  summarize(median = median(nbm_brightness_ratio, na.rm = T)) %>%
+  ungroup()
+med.nbrcp.orig
+```
+
+## Model Fits
+This metric appears to be normally distributed, so let's start with a non-transformed model.
+
+### Non-Transformed
+```{r}
+mod.nt.nbrcp.n <- lm(nbm_brightness_ratio ~ Neurotype, data = dat.merged)
+summary(mod.nt.nbrcp.n)
+```
+Now let's examine the model residuals.
+```{r}
+mod.nt.nbrcp.n.res <- simulateResiduals(mod.nt.nbrcp.n, plot = T)
+```
+
+And estimate marginal means:
+```{r}
+emmeans(mod.nt.nbrcp.n, ~Neurotype)
+```
+
+### Model Selection
+The non-transformed model above looks really good, and it's the one we'll be using to analyze our NBRC+ metric.
+
+---
+
+
+# NBRC- Analysis
+We'll now proceeed to analyze our NBM *ChaT- OXTR* mRNA Brightness Ratio metric.
+
+## Exploratory Analysis
+
+First, let's find our sample sizes (split up by group).
+```{r}
+with(filter(dat.merged, !is.na(nbm_inv_brightness_ratio)),
+     table(Neurotype, useNA = "ifany"))
+```
+
+Now let's plot the data.
+First, let's try it without any transforms.
+```{r}
+ggplot(dat.merged,
+       aes(x = Neurotype, y = nbm_inv_brightness_ratio)) +
+  geom_boxplot(alpha = 0.8, outlier.shape = NA) +
+  geom_jitter(height = 0, width = 0.1)
+```
+
+Since the data appear skewed, let's try a log-transform.
+```{r}
+ggplot(dat.merged,
+       aes(x = Neurotype, y = log(nbm_inv_brightness_ratio))) +
+  geom_boxplot(alpha = 0.8, outlier.shape = NA) +
+  geom_jitter(height = 0, width = 0.1)
+```
+Although it's not perfect, NBRC- does appear log-normally distributed.
+Based on just visual examination, there does not appear to be a significant difference between ASD and AST for our NBRC- metric, although NBRC- does appear to trend higher for our ASD group.
+
+Finally, let's compute median values by Neurotype.
+```{r}
+med.nbrcm.orig <- dat.merged %>%
+  group_by(Neurotype) %>%
+  summarize(median = median(nbm_inv_brightness_ratio, na.rm = T)) %>%
+  ungroup()
+med.nbrcm.orig
+```
+
+## Model Fits
+Since we have skewed data, we'll try fiting a few different models and evaluate the residuals to choose our best option.
+
+### Non-Transformed
+```{r}
+mod.nt.nbrcm.n <- lm(nbm_inv_brightness_ratio ~ Neurotype, data = dat.merged)
+summary(mod.nt.nbrcm.n)
+```
+Now let's examine the model residuals.
+```{r}
+mod.nt.nbrcm.n.res <- simulateResiduals(mod.nt.nbrcm.n, plot = T)
+```
+
+And estimate marginal means:
+```{r}
+emmeans(mod.nt.nbrcm.n, ~Neurotype)
+```
+
+### Log-Transformed
+```{r}
+mod.nt.nbrcm.l <- lm(log(nbm_inv_brightness_ratio) ~ Neurotype, data = dat.merged)
+summary(mod.nt.nbrcm.l)
+```
+
+Now let's examine the model residuals.
+```{r}
+mod.nt.nbrcm.l.res <- simulateResiduals(mod.nt.nbrcm.l, plot = T)
+```
+
+And estimate marginal means:
+```{r}
+emmeans(mod.nt.nbrcm.l, ~Neurotype, type = "response")
+```
+
+### Square-Root-Transformed
+```{r}
+mod.nt.nbrcm.s <- lm(sqrt(nbm_inv_brightness_ratio) ~ Neurotype, data = dat.merged)
+summary(mod.nt.nbrcm.s)
+```
+
+Now let's examine the model residuals.
+```{r}
+mod.nt.nbrcm.s.res <- simulateResiduals(mod.nt.nbrcm.s, plot = T)
+```
+
+And estimate marginal means:
+```{r}
+emmeans(mod.nt.nbrcm.s, ~Neurotype, type = "response")
+```
+
+### Model Selection
+Based on the statistics above, we'll be selecting the log-transformed model to evaluate our NBRC- metric. 
+This is because it's residuals are approximately normal, while keeping the estimated marginal means close to the median values found above.
+
+---
+
+# VB Analysis
+We'll now proceed to analyze our VP *OXTR* mRNA Brightness metric.
+
+## Exploratory Analysis
+
+First, let's find our sample sizes (split up by group).
+```{r}
+with(filter(dat.merged, !is.na(vp_brightness)),
+     table(Neurotype, useNA = "ifany"))
+```
+
+Now let's plot the data.
+First, let's try it without any transforms.
+```{r}
+ggplot(dat.merged,
+       aes(x = Neurotype, y = vp_brightness)) +
+  geom_boxplot(alpha = 0.8, outlier.shape = NA) +
+  geom_jitter(height = 0, width = 0.1)
+```
+
+Since the data appear skewed, let's try a log-transform.
+```{r}
+ggplot(dat.merged,
+       aes(x = Neurotype, y = log(vp_brightness))) +
+  geom_boxplot(alpha = 0.8, outlier.shape = NA) +
+  geom_jitter(height = 0, width = 0.1)
+```
+Although it's not perfect, VB does appear log-normally distributed.
+Based on just visual examination, it appears there may be a significant difference between neurotypes for this metric.
+
+Finally, let's compute median values by Neurotype.
+```{r}
+med.vb.orig <- dat.merged %>%
+  group_by(Neurotype) %>%
+  summarize(median = median(vp_brightness, na.rm = T)) %>%
+  ungroup()
+med.vb.orig
+```
+
+## Model Fits
+Since we have skewed data, we'll try fiting a few different models and evaluate the residuals to choose our best option.
+
+### Non-Transformed
+```{r}
+mod.nt.vb.n <- lm(vp_brightness ~ Neurotype, data = dat.merged)
+summary(mod.nt.vb.n)
+```
+Now let's examine the model residuals.
+```{r}
+mod.nt.vb.n.res <- simulateResiduals(mod.nt.vb.n, plot = T)
+```
+
+And estimate marginal means:
+```{r}
+emmeans(mod.nt.vb.n, ~Neurotype)
+```
+
+### Log-Transformed
+```{r}
+mod.nt.vb.l <- lm(log(vp_brightness) ~ Neurotype, data = dat.merged)
+summary(mod.nt.vb.l)
+```
+
+Now let's examine the model residuals.
+```{r}
+mod.nt.vb.l.res <- simulateResiduals(mod.nt.vb.l, plot = T)
+```
+
+And estimate marginal means:
+```{r}
+emmeans(mod.nt.vb.l, ~Neurotype, type = "response")
+```
+
+### Square-Root-Transformed
+```{r}
+mod.nt.vb.s <- lm(sqrt(vp_brightness) ~ Neurotype, data = dat.merged)
+summary(mod.nt.vb.s)
+```
+
+Now let's examine the model residuals.
+```{r}
+mod.nt.vb.s.res <- simulateResiduals(mod.nt.vb.s, plot = T)
+```
+
+And estimate marginal means:
+```{r}
+emmeans(mod.nt.vb.s, ~Neurotype, type = "response")
+```
+
+### Model Selection
+Based on the statistics above, we'll be selecting the log-transformed model to evaluate our NBRC- metric. 
+This is because it's residuals are approximately normal, while keeping the estimated marginal means close to the median values found above.
