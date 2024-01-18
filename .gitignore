@@ -2,3 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+*.Rproj
+*.csv
+*.html
+*.code-workspace
