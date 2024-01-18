@@ -1,0 +1,787 @@
+---
+title: "Genotype/OXTR Binding Density Association"
+output: html_notebook
+---
+
+# Load Libraries
+```{r}
+library(tidyr)
+library(tibble)
+library(dplyr)
+library(glmnet)
+library(ggplot2)
+```
+
+# Load Data
+First, we need to load the OXTR SNP genotypes.
+```{r}
+dat.oxtr_snps <- read.csv("../preprocessed_data/rearranged_oxtr_snps.csv")
+dat.oxtr_snps
+```
+
+We need to replace all `NC` (no call) entries with `NA`. These correspond to the replicates removed after genotyping. Then we need to remove the replicates.
+```{r}
+dat.oxtr_snps$rs2268491 <- dat.oxtr_snps$rs2268491 %>% na_if("NC")
+dat.oxtr_snps$rs2268495 <- dat.oxtr_snps$rs2268495 %>% na_if("NC")
+dat.oxtr_snps$rs237885 <- dat.oxtr_snps$rs237885 %>% na_if("NC")
+dat.oxtr_snps <- dat.oxtr_snps %>% na.omit()
+dat.oxtr_snps
+```
+
+Next, we need to load in a map between the `sample_bar_pos` identifier and the `sample_id` identifier. 
+```{r}
+dat.sample_map <- read.csv("../additional_data/sample_bar_pos_map.csv")
+dat.sample_map
+```
+
+Finally, let's load in demographic and neurophenotypic data:
+```{r}
+dat.dem_phen <- read.csv("../additional_data/specimen info_ASD genetics.csv")
+dat.dem_phen
+```
+and replace any empty string entries with `NA`:
+```{r}
+dat.dem_phen$sex <- dat.dem_phen$sex %>% na_if("")
+dat.dem_phen$race <- dat.dem_phen$race %>% na_if("")
+```
+
+## Merge Data Tables
+Now we need to join these tables into a single table containing all the data for the analysis, leaving us with:
+```{r}
+dat.gen_with_ids <- left_join(dat.oxtr_snps, dat.sample_map, by = "sample_bar_pos")
+dat.merged <- left_join(dat.gen_with_ids, dat.dem_phen, by = "sample_id")
+dat.merged <- dat.merged %>% select(sample_id, rs2268491, rs2268495, rs237885, diagnosis, sex, race, age_yrs, oxtr_density_in_vp, oxtr_density_in_nbm)
+dat.merged
+```
+## Add In Dummy Variables
+```{r}
+dat.dummy <- dat.merged %>% add_column(dummy::dummy(dat.merged))
+dat.dummy
+```
+## Define a Matrix of Predictor Variables
+```{r}
+dat.pred_vars.all <- data.matrix(dat.dummy[, c("rs2268491_AB", "rs2268491_BB")])
+```
+
+# Data Analysis (NBM)
+
+## Setup
+
+Remove rows missing `oxtr_density_in_nbm` values for the NBM model.
+```{r}
+dat.merged.nbm <- dat.merged %>% filter(!is.na(oxtr_density_in_nbm))
+dat.merged.nbm
+```
+
+Now filter down to only relevant columns and eliminate rows with missing values (should only eliminate 1/35 rows).
+```{r}
+dat.merged.nbm.red <- dat.merged.nbm[,c("oxtr_density_in_nbm", "age_yrs", "race", "sex", "diagnosis", "rs2268491", "rs2268495", "rs237885")] %>% na.omit()
+dat.merged.nbm.red
+```
+
+## Plots
+
+### Ungrouped
+#### OXTR NBM Density by rs2268491 Genotype
+```{r}
+ggplot(data = dat.merged.nbm.red,
+       aes(
+         x = factor(rs2268491),
+         y = oxtr_density_in_nbm,
+         group = 1
+         )) +
+  geom_jitter() +
+  stat_summary(fun.data = 'mean_cl_boot') +
+  stat_summary(geom = 'line', fun = 'mean') +
+  scale_x_discrete("Genotype") +
+  scale_y_continuous("OXTR Density in NBM")
+```
+
+
+#### OXTR NBM Density by rs2268495 Genotype
+```{r}
+ggplot(data = dat.merged.nbm.red,
+       aes(
+         x = factor(rs2268495),
+         y = oxtr_density_in_nbm,
+         group = 1
+         )) +
+  geom_jitter() +
+  stat_summary(fun.data = 'mean_cl_boot') +
+  stat_summary(geom = 'line', fun = 'mean') +
+  scale_x_discrete("Genotype") +
+  scale_y_continuous("OXTR Density in NBM")
+```
+
+#### OXTR NBM Density by rs237885 Genotype
+```{r}
+ggplot(data = dat.merged.nbm.red,
+       aes(
+         x = factor(rs237885),
+         y = oxtr_density_in_nbm,
+         group = 1
+         )) +
+  geom_jitter() +
+  stat_summary(fun.data = 'mean_cl_boot') +
+  stat_summary(geom = 'line', fun = 'mean') +
+  scale_x_discrete("Genotype") +
+  scale_y_continuous("OXTR Density in NBM")
+```
+
+
+### Grouped By Diagnosis
+#### OXTR NBM Density by rs2268491 Genotype
+```{r}
+ggplot(data = dat.merged.nbm.red,
+       aes(
+         x = factor(rs2268491),
+         y = oxtr_density_in_nbm,
+         color = diagnosis,
+         group = diagnosis
+         )) +
+  geom_jitter(width = 0.25) +
+  stat_summary(fun.data = 'mean_cl_boot') +
+  stat_summary(geom = 'line', fun = 'mean') +
+  scale_x_discrete("Genotype") +
+  scale_y_continuous("OXTR Density in NBM")
+```
+
+
+#### OXTR NBM Density by rs2268495 Genotype
+```{r}
+ggplot(data = dat.merged.nbm.red,
+       aes(
+         x = factor(rs2268495),
+         y = oxtr_density_in_nbm,
+         color = diagnosis,
+         group = diagnosis
+         )) +
+  geom_jitter(width = 0.25) +
+  stat_summary(fun.data = 'mean_cl_boot') +
+  stat_summary(geom = 'line', fun = 'mean') +
+  scale_x_discrete("Genotype") +
+  scale_y_continuous("OXTR Density in NBM")
+```
+
+#### OXTR NBM Density by rs237885 Genotype
+```{r}
+ggplot(data = dat.merged.nbm.red,
+       aes(
+         x = factor(rs237885),
+         y = oxtr_density_in_nbm,
+         color = diagnosis,
+         group = diagnosis
+         )) +
+  geom_jitter(width = 0.25) +
+  stat_summary(fun.data = 'mean_cl_boot') +
+  stat_summary(geom = 'line', fun = 'mean') +
+  scale_x_discrete("Genotype") +
+  scale_y_continuous("OXTR Density in NBM")
+```
+
+## Regression Analysis
+
+### Prep
+For reproducibility, we'll be setting a value of `6592` for our random seed.
+```{r}
+set.seed(6592)
+```
+
+#### Convert Genotypes to Integer Representations
+We need to make the following conversions for each genotype to make them usable for our regression model: AA = 0, AB = 1, BB = 2. Since each of these SNPs is an intron variant, we're assuming that all variance is additive.
+```{r}
+dat.merged.nbm.red.ir <- dat.merged.nbm.red
+dat.merged.nbm.red.ir[dat.merged.nbm.red.ir == "AA"] <- 0
+dat.merged.nbm.red.ir[dat.merged.nbm.red.ir == "AB"] <- 1
+dat.merged.nbm.red.ir[dat.merged.nbm.red.ir == "BB"] <- 2
+dat.merged.nbm.red.ir$rs2268491 <- as.numeric(dat.merged.nbm.red.ir$rs2268491)
+dat.merged.nbm.red.ir$rs2268495 <- as.numeric(dat.merged.nbm.red.ir$rs2268495)
+dat.merged.nbm.red.ir$rs237885 <- as.numeric(dat.merged.nbm.red.ir$rs237885)
+dat.merged.nbm.red.ir
+```
+#### Add in Dummy Variables
+```{r}
+dat.merged.nbm.red.dummy <- dat.merged.nbm.red.ir %>% add_column(dummy::dummy(dat.merged.nbm.red.ir))
+dat.merged.nbm.red.dummy
+```
+
+### Ungrouped Ridge Regression
+First, we'll build a ridge regression model which includes both ASD and NT samples.
+
+#### Generate X Matrix
+
+For reference, the following genotypes are present for our three SNPs: *rs2268491*: AB, BB; *rs2268495*: AB, BB; *rs237885*: AA, AB, BB. 
+
+```{r}
+x.nbm.all <- apply(as.matrix(dat.merged.nbm.red.dummy[, c('age_yrs', 'race_African.American', 'race_Caucasian', 'sex_Male', 'rs2268491', 'rs2268495', 'rs237885')]), 2, as.numeric)
+x.nbm.all
+```
+
+#### Find $\lambda$ Using Cross-Validation
+We'll be using 5-fold cross validation to find an optimal value for $\lambda$. 
+```{r}
+mod.nbm.all.cv <- cv.glmnet(x.nbm.all, dat.merged.nbm.red.dummy$oxtr_density_in_nbm, alpha = 0)
+mod.nbm.all.best_lambda <- mod.nbm.all.cv$lambda.min
+mod.nbm.all.best_lambda
+```
+And here's a plot of our test MSE by lambda value:
+```{r}
+plot(mod.nbm.all.cv)
+```
+
+#### Analyze Model
+Finally, we'll use the $\lambda$ value found above to get coefficient estimates for our model.
+```{r}
+mod.nbm.all.fin <- glmnet(x.nbm.all, dat.merged.nbm.red.dummy$oxtr_density_in_nbm, alpha = 0, lambda = mod.nbm.all.best_lambda)
+mod.nbm.all.fin.coef <- coef(mod.nbm.all.fin)
+mod.nbm.all.fin.coef
+```
+Now let's calculate our $R^2$ value:
+```{r}
+# use fitted model to make predictions
+y_pred <- predict(mod.nbm.all.fin, s = mod.nbm.all.best_lambda, newx = x.nbm.all)
+y <- dat.merged.nbm.red.dummy$oxtr_density_in_nbm
+sst <- sum((y - mean(y))^2)
+sse <- sum((y_pred - y)^2)
+
+mod.nbm.all.fin.r2 <- 1 - sse/sst
+mod.nbm.all.fin.r2
+```
+Finally, let's obtain p-values using a permutation test with $N=1000$:
+```{r}
+# setup dimensions
+N_beta <- dim(mod.nbm.all.fin.coef)[1]
+N_perms <- 1000
+
+mod.nbm.all.fin.sig <- data.frame(X_i = dimnames(mod.nbm.all.fin.coef)[[1]], B_i = summary(mod.nbm.all.fin.coef)[,3], p_value = rep(NA, N_beta))
+
+# create a matrix to store permutation results
+perm_res <- matrix(data = NA, nrow = N_beta, ncol = N_perms)
+
+# run 1000 permutations
+for (i in 1:N_perms) {
+  y_perm <- sample(dat.merged.nbm.red.dummy$oxtr_density_in_nbm, size = length(dat.merged.nbm.red.dummy$oxtr_density_in_nbm), replace = F)
+  mod <- glmnet(x.nbm.all, y_perm, alpha = 0, lambda = mod.nbm.all.best_lambda)
+  mod.coef <- coef(mod)
+  perm_res[,i] <- abs(summary(mod.coef)[,3]) >= abs(summary(mod.nbm.all.fin.coef)[,3])
+}
+
+# calculate p-values (ratio of beta-estimates geq than orig model)
+for (i in 1:N_beta) {
+  mod.nbm.all.fin.sig$p_value[i] <- mean(perm_res[i,])
+}
+mod.nbm.all.fin.sig$p_value_adjusted <- p.adjust(mod.nbm.all.fin.sig$p_value, method = "fdr")
+mod.nbm.all.fin.sig
+```
+
+### ASD Only Ridge Regression
+Now we'll build a regression model consisting only of the ASD samples.
+
+#### Generate subsetted X Matrix
+
+We'll be subsetting the x matrix we generated above.
+
+```{r}
+x.nbm.asd <- x.nbm.all[dat.merged.nbm.red.dummy$diagnosis == "ASD", ]
+x.nbm.asd
+```
+
+#### Find $\lambda$ Using Cross-Validation
+We'll be using 5-fold cross validation to find an optimal value for $\lambda$. 
+```{r}
+y <- dat.merged.nbm.red.dummy$oxtr_density_in_nbm[dat.merged.nbm.red.dummy$diagnosis == "ASD"]
+mod.nbm.asd.cv <- cv.glmnet(x.nbm.asd, y, alpha = 0, nfold = 5)
+mod.nbm.asd.best_lambda <- mod.nbm.asd.cv$lambda.min
+mod.nbm.asd.best_lambda
+```
+And here's a plot of our test MSE by lambda value:
+```{r}
+plot(mod.nbm.all.cv)
+```
+
+#### Analyze Model
+Finally, we'll use the $\lambda$ value found above to get coefficient estimates for our model.
+```{r}
+mod.nbm.asd.fin <- glmnet(x.nbm.asd, y, alpha = 0, lambda = mod.nbm.asd.best_lambda)
+mod.nbm.asd.fin.coef <- coef(mod.nbm.asd.fin)
+mod.nbm.asd.fin.coef
+```
+Now let's calculate our $R^2$ value:
+```{r}
+# use fitted model to make predictions
+y_pred <- predict(mod.nbm.asd.fin, s = mod.nbm.asd.best_lambda, newx = x.nbm.asd)
+sst <- sum((y - mean(y))^2)
+sse <- sum((y_pred - y)^2)
+
+mod.nbm.asd.fin.r2 <- 1 - sse/sst
+mod.nbm.asd.fin.r2
+```
+
+Finally, let's obtain p-values using a permutation test with $N=1000$:
+```{r}
+# setup dimensions
+N_beta <- dim(mod.nbm.asd.fin.coef)[1]
+N_perms <- 1000
+
+mod.nbm.asd.fin.sig <- data.frame(X_i = dimnames(mod.nbm.asd.fin.coef)[[1]], B_i = summary(mod.nbm.asd.fin.coef)[,3], p_value = rep(NA, N_beta))
+
+# create a matrix to store permutation results
+perm_res <- matrix(data = NA, nrow = N_beta, ncol = N_perms)
+
+# run 1000 permutations
+for (i in 1:N_perms) {
+  y_perm <- sample(y, size = length(y), replace = F)
+  mod <- glmnet(x.nbm.asd, y_perm, alpha = 0, lambda = mod.nbm.asd.best_lambda)
+  mod.coef <- coef(mod)
+  perm_res[,i] <- abs(summary(mod.coef)[,3]) >= abs(summary(mod.nbm.asd.fin.coef)[,3])
+}
+
+# calculate p-values (ratio of beta-estimates geq than orig model)
+for (i in 1:N_beta) {
+  mod.nbm.asd.fin.sig$p_value[i] <- mean(perm_res[i,])
+}
+mod.nbm.asd.fin.sig$p_value_adjusted <- p.adjust(mod.nbm.asd.fin.sig$p_value, method = "fdr")
+mod.nbm.asd.fin.sig
+```
+
+### AST Only Ridge Regression
+Now we'll build a regression model consisting only of the NT samples.
+
+#### Generate subsetted X Matrix
+
+We'll be subsetting the x matrix we generated above.
+
+```{r}
+x.nbm.ast <- x.nbm.all[dat.merged.nbm.red.dummy$diagnosis == "TD", ]
+x.nbm.ast
+```
+
+#### Find $\lambda$ Using Cross-Validation
+We'll be using 5-fold cross validation to find an optimal value for $\lambda$. 
+```{r}
+y <- dat.merged.nbm.red.dummy$oxtr_density_in_nbm[dat.merged.nbm.red.dummy$diagnosis == "TD"]
+mod.nbm.ast.cv <- cv.glmnet(x.nbm.ast, y, alpha = 0, nfold = 5)
+mod.nbm.ast.best_lambda <- mod.nbm.ast.cv$lambda.min
+mod.nbm.ast.best_lambda
+```
+And here's a plot of our test MSE by lambda value:
+```{r}
+plot(mod.nbm.ast.cv)
+```
+
+#### Analyze Model
+Finally, we'll use the $\lambda$ value found above to get coefficient estimates for our model.
+```{r}
+mod.nbm.ast.fin <- glmnet(x.nbm.ast, y, alpha = 0, lambda = mod.nbm.ast.best_lambda)
+mod.nbm.ast.fin.coef <- coef(mod.nbm.ast.fin)
+mod.nbm.ast.fin.coef
+```
+Now let's calculate our $R^2$ value:
+```{r}
+# use fitted model to make predictions
+y_pred <- predict(mod.nbm.ast.fin, s = mod.nbm.ast.best_lambda, newx = x.nbm.ast)
+sst <- sum((y - mean(y))^2)
+sse <- sum((y_pred - y)^2)
+
+mod.nbm.ast.fin.r2 <- 1 - sse/sst
+mod.nbm.ast.fin.r2
+```
+
+Finally, let's obtain p-values using a permutation test with $N=1000$:
+```{r}
+# setup dimensions
+N_beta <- dim(mod.nbm.ast.fin.coef)[1]
+N_perms <- 1000
+
+mod.nbm.ast.fin.sig <- data.frame(X_i = dimnames(mod.nbm.ast.fin.coef)[[1]], B_i = summary(mod.nbm.ast.fin.coef)[,3], p_value = rep(NA, N_beta))
+
+# create a matrix to store permutation results
+perm_res <- matrix(data = NA, nrow = N_beta, ncol = N_perms)
+
+# run 1000 permutations
+for (i in 1:N_perms) {
+  y_perm <- sample(y, size = length(y), replace = F)
+  mod <- glmnet(x.nbm.ast, y_perm, alpha = 0, lambda = mod.nbm.ast.best_lambda)
+  mod.coef <- coef(mod)
+  perm_res[,i] <- abs(summary(mod.coef)[,3]) >= abs(summary(mod.nbm.ast.fin.coef)[,3])
+}
+
+# calculate p-values (ratio of beta-estimates geq than orig model)
+for (i in 1:N_beta) {
+  mod.nbm.ast.fin.sig$p_value[i] <- mean(perm_res[i,])
+}
+mod.nbm.ast.fin.sig$p_value_adjusted <- p.adjust(mod.nbm.ast.fin.sig$p_value, method = "fdr")
+mod.nbm.ast.fin.sig
+```
+
+---
+
+# Data Analysis (VP)
+
+## Setup
+
+Remove rows missing `oxtr_density_in_vp` values for the VP model.
+```{r}
+dat.merged.vp <- dat.merged %>% filter(!is.na(oxtr_density_in_vp))
+dat.merged.vp
+```
+
+Now filter down to only relevant columns and eliminate rows with missing values (should only eliminate 1/35 rows).
+```{r}
+dat.merged.vp.red <- dat.merged.nbm[,c("oxtr_density_in_vp", "age_yrs", "race", "sex", "diagnosis", "rs2268491", "rs2268495", "rs237885")] %>% na.omit()
+dat.merged.vp.red
+```
+
+## Plots
+
+### Ungrouped
+#### OXTR VP Density by rs2268491 Genotype
+```{r}
+ggplot(data = dat.merged.vp.red,
+       aes(
+         x = factor(rs2268491),
+         y = oxtr_density_in_vp,
+         group = 1
+         )) +
+  geom_jitter(width = 0.25) +
+  stat_summary(fun.data = 'mean_cl_boot') +
+  stat_summary(geom = 'line', fun = 'mean') +
+  scale_x_discrete("Genotype") +
+  scale_y_continuous("OXTR Density in VP")
+```
+
+
+#### OXTR VP Density by rs2268495 Genotype
+```{r}
+ggplot(data = dat.merged.vp.red,
+       aes(
+         x = factor(rs2268495),
+         y = oxtr_density_in_vp,
+         group = 1
+         )) +
+  geom_jitter(width = 0.25) +
+  stat_summary(fun.data = 'mean_cl_boot') +
+  stat_summary(geom = 'line', fun = 'mean') +
+  scale_x_discrete("Genotype") +
+  scale_y_continuous("OXTR Density in VP")
+```
+
+#### OXTR VP Density by rs237885 Genotype
+```{r}
+ggplot(data = dat.merged.vp.red,
+       aes(
+         x = factor(rs237885),
+         y = oxtr_density_in_vp,
+         group = 1
+         )) +
+  geom_jitter(width = 0.25) +
+  stat_summary(fun.data = 'mean_cl_boot') +
+  stat_summary(geom = 'line', fun = 'mean') +
+  scale_x_discrete("Genotype") +
+  scale_y_continuous("OXTR Density in VP")
+```
+
+
+### Grouped By Diagnosis
+#### OXTR VP Density by rs2268491 Genotype
+```{r}
+ggplot(data = dat.merged.vp.red,
+       aes(
+         x = factor(rs2268491),
+         y = oxtr_density_in_vp,
+         color = diagnosis,
+         group = diagnosis
+         )) +
+  geom_jitter(width = 0.25) +
+  stat_summary(fun.data = 'mean_cl_boot') +
+  stat_summary(geom = 'line', fun = 'mean') +
+  scale_x_discrete("Genotype") +
+  scale_y_continuous("OXTR Density in VP")
+```
+
+
+#### OXTR VP Density by rs2268495 Genotype
+```{r}
+ggplot(data = dat.merged.vp.red,
+       aes(
+         x = factor(rs2268495),
+         y = oxtr_density_in_vp,
+         color = diagnosis,
+         group = diagnosis
+         )) +
+  geom_jitter(width = 0.25) +
+  stat_summary(fun.data = 'mean_cl_boot') +
+  stat_summary(geom = 'line', fun = 'mean') +
+  scale_x_discrete("Genotype") +
+  scale_y_continuous("OXTR Density in VP")
+```
+
+#### OXTR VP Density by rs237885 Genotype
+```{r}
+ggplot(data = dat.merged.vp.red,
+       aes(
+         x = factor(rs237885),
+         y = oxtr_density_in_vp,
+         color = diagnosis,
+         group = diagnosis
+         )) +
+  geom_jitter(width = 0.25) +
+  stat_summary(fun.data = 'mean_cl_boot') +
+  stat_summary(geom = 'line', fun = 'mean') +
+  scale_x_discrete("Genotype") +
+  scale_y_continuous("OXTR Density in VP")
+```
+
+## Regression Analysis
+
+### Prep
+Recall that for reproducibility, we set a value of `6592` for our random seed above.
+
+#### Convert Genotypes to Integer Representations
+We need to make the following conversions for each genotype to make them usable for our regression model: AA = 0, AB = 1, BB = 2. Since each of these SNPs is an intron variant, we're assuming that all variance is additive.
+```{r}
+dat.merged.vp.red.ir <- dat.merged.vp.red
+dat.merged.vp.red.ir[dat.merged.vp.red.ir == "AA"] <- 0
+dat.merged.vp.red.ir[dat.merged.vp.red.ir == "AB"] <- 1
+dat.merged.vp.red.ir[dat.merged.vp.red.ir == "BB"] <- 2
+dat.merged.vp.red.ir$rs2268491 <- as.numeric(dat.merged.vp.red.ir$rs2268491)
+dat.merged.vp.red.ir$rs2268495 <- as.numeric(dat.merged.vp.red.ir$rs2268495)
+dat.merged.vp.red.ir$rs237885 <- as.numeric(dat.merged.vp.red.ir$rs237885)
+dat.merged.vp.red.ir
+```
+#### Add in Dummy Variables
+```{r}
+dat.merged.vp.red.dummy <- dat.merged.vp.red.ir %>% add_column(dummy::dummy(dat.merged.vp.red.ir))
+dat.merged.vp.red.dummy
+```
+
+### Ungrouped Ridge Regression
+First, we'll build a ridge regression model which includes both ASD and NT samples.
+
+#### Generate X Matrix
+
+For reference, the following genotypes are present for our three SNPs: *rs2268491*: AB, BB; *rs2268495*: AB, BB; *rs237885*: AA, AB, BB. 
+
+```{r}
+x.vp.all <- apply(as.matrix(dat.merged.vp.red.dummy[, c('age_yrs', 'race_African.American', 'race_Caucasian', 'sex_Male', 'rs2268491', 'rs2268495', 'rs237885')]), 2, as.numeric)
+x.vp.all
+```
+
+#### Find $\lambda$ Using Cross-Validation
+We'll be using 4-fold cross validation to find an optimal value for $\lambda$. 
+```{r}
+mod.vp.all.cv <- cv.glmnet(x.vp.all, dat.merged.vp.red.dummy$oxtr_density_in_vp, alpha = 0, nfold = 4)
+mod.vp.all.best_lambda <- mod.vp.all.cv$lambda.min
+mod.vp.all.best_lambda
+```
+And here's a plot of our test MSE by lambda value:
+```{r}
+plot(mod.vp.all.cv)
+```
+
+#### Analyze Model
+Finally, we'll use the $\lambda$ value found above to get coefficient estimates for our model.
+```{r}
+mod.vp.all.fin <- glmnet(x.vp.all, dat.merged.vp.red.dummy$oxtr_density_in_vp, alpha = 0, lambda = mod.vp.all.best_lambda)
+mod.vp.all.fin.coef <- coef(mod.vp.all.fin)
+mod.vp.all.fin.coef
+```
+Now let's calculate our $R^2$ value:
+```{r}
+# use fitted model to make predictions
+y_pred <- predict(mod.vp.all.fin, s = mod.vp.all.best_lambda, newx = x.vp.all)
+y <- dat.merged.vp.red.dummy$oxtr_density_in_vp
+sst <- sum((y - mean(y))^2)
+sse <- sum((y_pred - y)^2)
+
+mod.vp.all.fin.r2 <- 1 - sse/sst
+mod.vp.all.fin.r2
+```
+Finally, let's obtain p-values using a permutation test with $N=1000$:
+```{r}
+# setup dimensions
+N_beta <- dim(mod.vp.all.fin.coef)[1]
+N_perms <- 1000
+
+mod.vp.all.fin.sig <- data.frame(X_i = dimnames(mod.vp.all.fin.coef)[[1]], B_i = summary(mod.vp.all.fin.coef)[,3], p_value = rep(NA, N_beta))
+
+# create a matrix to store permutation results
+perm_res <- matrix(data = NA, nrow = N_beta, ncol = N_perms)
+
+# run 1000 permutations
+for (i in 1:N_perms) {
+  y_perm <- sample(dat.merged.vp.red.dummy$oxtr_density_in_vp, size = length(dat.merged.vp.red.dummy$oxtr_density_in_vp), replace = F)
+  mod <- glmnet(x.vp.all, y_perm, alpha = 0, lambda = mod.vp.all.best_lambda)
+  mod.coef <- coef(mod)
+  perm_res[,i] <- abs(summary(mod.coef)[,3]) >= abs(summary(mod.vp.all.fin.coef)[,3])
+}
+
+# calculate p-values (ratio of beta-estimates geq than orig model)
+for (i in 1:N_beta) {
+  mod.vp.all.fin.sig$p_value[i] <- mean(perm_res[i,])
+}
+mod.vp.all.fin.sig$p_value_adjusted <- p.adjust(mod.vp.all.fin.sig$p_value, method = "fdr")
+mod.vp.all.fin.sig
+```
+
+### ASD Only Ridge Regression
+Now we'll build a regression model consisting only of the ASD samples.
+
+#### Generate subsetted X Matrix
+
+We'll be subsetting the x matrix we generated above.
+
+```{r}
+x.vp.asd <- x.vp.all[dat.merged.vp.red.dummy$diagnosis == "ASD", ]
+x.vp.asd
+```
+
+#### Find $\lambda$ Using Cross-Validation
+We'll be using 4-fold cross validation to find an optimal value for $\lambda$. 
+```{r}
+y <- dat.merged.vp.red.dummy$oxtr_density_in_vp[dat.merged.vp.red.dummy$diagnosis == "ASD"]
+mod.vp.asd.cv <- cv.glmnet(x.vp.asd, y, alpha = 0, nfold = 4)
+mod.vp.asd.best_lambda <- mod.vp.asd.cv$lambda.min
+mod.vp.asd.best_lambda
+```
+And here's a plot of our test MSE by lambda value:
+```{r}
+plot(mod.vp.all.cv)
+```
+
+#### Analyze Model
+Finally, we'll use the $\lambda$ value found above to get coefficient estimates for our model.
+```{r}
+mod.vp.asd.fin <- glmnet(x.vp.asd, y, alpha = 0, lambda = mod.vp.asd.best_lambda)
+mod.vp.asd.fin.coef <- coef(mod.vp.asd.fin)
+mod.vp.asd.fin.coef
+```
+Now let's calculate our $R^2$ value:
+```{r}
+# use fitted model to make predictions
+y_pred <- predict(mod.vp.asd.fin, s = mod.vp.asd.best_lambda, newx = x.vp.asd)
+sst <- sum((y - mean(y))^2)
+sse <- sum((y_pred - y)^2)
+
+mod.vp.asd.fin.r2 <- 1 - sse/sst
+mod.vp.asd.fin.r2
+```
+
+Finally, let's obtain p-values using a permutation test with $N=1000$:
+```{r}
+# setup dimensions
+N_beta <- dim(mod.vp.asd.fin.coef)[1]
+N_perms <- 1000
+
+mod.vp.asd.fin.sig <- data.frame(X_i = dimnames(mod.vp.asd.fin.coef)[[1]], B_i = summary(mod.vp.asd.fin.coef)[,3], p_value = rep(NA, N_beta))
+
+# create a matrix to store permutation results
+perm_res <- matrix(data = NA, nrow = N_beta, ncol = N_perms)
+
+# run 1000 permutations
+for (i in 1:N_perms) {
+  y_perm <- sample(y, size = length(y), replace = F)
+  mod <- glmnet(x.vp.asd, y_perm, alpha = 0, lambda = mod.vp.asd.best_lambda)
+  mod.coef <- coef(mod)
+  perm_res[,i] <- abs(summary(mod.coef)[,3]) >= abs(summary(mod.vp.asd.fin.coef)[,3])
+}
+
+# calculate p-values (ratio of beta-estimates geq than orig model)
+for (i in 1:N_beta) {
+  mod.vp.asd.fin.sig$p_value[i] <- mean(perm_res[i,])
+}
+mod.vp.asd.fin.sig$p_value_adjusted <- p.adjust(mod.vp.asd.fin.sig$p_value, method = "fdr")
+mod.vp.asd.fin.sig
+```
+
+### AST Only Ridge Regression
+Now we'll build a regression model consisting only of the NT samples.
+
+#### Generate subsetted X Matrix
+
+We'll be subsetting the x matrix we generated above.
+
+```{r}
+x.vp.ast <- x.vp.all[dat.merged.vp.red.dummy$diagnosis == "TD", ]
+x.vp.ast
+```
+
+#### Find $\lambda$ Using Cross-Validation
+We'll be using 4-fold cross validation to find an optimal value for $\lambda$. 
+```{r}
+y <- dat.merged.vp.red.dummy$oxtr_density_in_vp[dat.merged.vp.red.dummy$diagnosis == "TD"]
+mod.vp.ast.cv <- cv.glmnet(x.vp.ast, y, alpha = 0, nfold = 4)
+mod.vp.ast.best_lambda <- mod.vp.ast.cv$lambda.min
+mod.vp.ast.best_lambda
+```
+And here's a plot of our test MSE by lambda value:
+```{r}
+plot(mod.vp.ast.cv)
+```
+
+#### Analyze Model
+Finally, we'll use the $\lambda$ value found above to get coefficient estimates for our model.
+```{r}
+mod.vp.ast.fin <- glmnet(x.vp.ast, y, alpha = 0, lambda = mod.vp.ast.best_lambda)
+mod.vp.ast.fin.coef <- coef(mod.vp.ast.fin)
+mod.vp.ast.fin.coef
+```
+Now let's calculate our $R^2$ value:
+```{r}
+# use fitted model to make predictions
+y_pred <- predict(mod.vp.ast.fin, s = mod.vp.ast.best_lambda, newx = x.vp.ast)
+sst <- sum((y - mean(y))^2)
+sse <- sum((y_pred - y)^2)
+
+mod.vp.ast.fin.r2 <- 1 - sse/sst
+mod.vp.ast.fin.r2
+```
+
+Finally, let's obtain p-values using a permutation test with $N=1000$:
+```{r}
+# setup dimensions
+N_beta <- dim(mod.vp.ast.fin.coef)[1]
+N_perms <- 1000
+
+mod.vp.ast.fin.sig <- data.frame(X_i = dimnames(mod.vp.ast.fin.coef)[[1]], B_i = summary(mod.vp.ast.fin.coef)[,3], p_value = rep(NA, N_beta))
+
+# create a matrix to store permutation results
+perm_res <- matrix(data = NA, nrow = N_beta, ncol = N_perms)
+
+# run 1000 permutations
+for (i in 1:N_perms) {
+  y_perm <- sample(y, size = length(y), replace = F)
+  mod <- glmnet(x.vp.ast, y_perm, alpha = 0, lambda = mod.vp.ast.best_lambda)
+  mod.coef <- coef(mod)
+  perm_res[,i] <- abs(summary(mod.coef)[,3]) >= abs(summary(mod.vp.ast.fin.coef)[,3])
+}
+
+# calculate p-values (ratio of beta-estimates geq than orig model)
+for (i in 1:N_beta) {
+  mod.vp.ast.fin.sig$p_value[i] <- mean(perm_res[i,])
+}
+mod.vp.ast.fin.sig$p_value_adjusted <- p.adjust(mod.vp.ast.fin.sig$p_value, method = "fdr")
+mod.vp.ast.fin.sig
+```
+
+
+# Summary of Regression Results
+
+## NBM - Ungrouped
+Our model had an $R^2$ of `r mod.nbm.all.fin.r2` with beta estimates/p-values `r mod.nbm.all.fin.sig`.
+
+## NBM - ASD Only
+Our model had an $R^2$ of `r mod.nbm.asd.fin.r2` with beta estimates/p-values `r mod.nbm.asd.fin.sig`.
+
+## NBM - AST Only
+Our model had an $R^2$ of `r mod.nbm.ast.fin.r2` with beta estimates/p-values `r mod.nbm.ast.fin.sig`.
+
+## VP - Ungrouped
+Our model had an $R^2$ of `r mod.vp.all.fin.r2` with beta estimates/p-values `r mod.vp.all.fin.sig`.
+
+## VP - ASD Only
+Our model had an $R^2$ of `r mod.vp.asd.fin.r2` with beta estimates/p-values `r mod.vp.asd.fin.sig`.
+
+## VP - AST Only
+Our model had an $R^2$ of `r mod.vp.ast.fin.r2` with beta estimates/p-values `r mod.vp.ast.fin.sig`.
+
